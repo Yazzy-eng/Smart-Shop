@@ -9,14 +9,14 @@ async function listProducts(req, res) {
 
   if (barcode) {
     params.push(barcode);
-    conditions.push(`barcode = $${params.length}`);
+    conditions.push(`p.barcode = $${params.length}`);
   } else if (search) {
     params.push(`%${search}%`);
-    conditions.push(`(name ILIKE $${params.length} OR sku ILIKE $${params.length} OR barcode ILIKE $${params.length})`);
+    conditions.push(`(p.name ILIKE $${params.length} OR p.sku ILIKE $${params.length} OR p.barcode ILIKE $${params.length})`);
   }
 
   if (lowStock === 'true') {
-    conditions.push('quantity_on_hand <= reorder_level');
+    conditions.push('p.quantity_on_hand <= p.reorder_level');
   }
 
   const { rows } = await db.query(
