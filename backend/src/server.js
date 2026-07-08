@@ -8,6 +8,10 @@ const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const exchangeRateRoutes = require('./routes/exchangeRates');
+const productRoutes = require('./routes/products');
+const customerRoutes = require('./routes/customers');
+const salesRoutes = require('./routes/sales');
+const categoryRoutes = require('./routes/categories');
 
 const app = express();
 
@@ -34,9 +38,12 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().t
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/exchange-rates', exchangeRateRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/sales', salesRoutes);
 
-// TODO (next modules): products, categories, suppliers, customers,
-// sales, payments, inventory, expenses, reports, dashboard, backups.
+// TODO (next modules): inventory, expenses, reports, dashboard, backups.
 
 // --- 404 + error handling ---
 app.use((req, res) => res.status(404).json({ error: 'Not found.' }));
