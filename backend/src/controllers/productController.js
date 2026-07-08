@@ -4,7 +4,7 @@ const { logActivity } = require('../utils/activityLogger');
 // GET /api/products?search=&barcode=&lowStock=true
 async function listProducts(req, res) {
   const { search, barcode, lowStock } = req.query;
-  const conditions = ['is_active = true'];
+  const conditions = ['p.is_active = true'];
   const params = [];
 
   if (barcode) {
