@@ -12,6 +12,8 @@ const productRoutes = require('./routes/products');
 const customerRoutes = require('./routes/customers');
 const salesRoutes = require('./routes/sales');
 const categoryRoutes = require('./routes/categories');
+const expenseRoutes = require('./routes/expenses');
+const reportsRoutes = require('./routes/reports');
 
 const app = express();
 
@@ -42,8 +44,10 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/reports', reportsRoutes);
 
-// TODO (next modules): inventory, expenses, reports, dashboard, backups.
+// TODO (next modules): dashboard PDF/Excel export, backups, full admin screens.
 
 // --- 404 + error handling ---
 app.use((req, res) => res.status(404).json({ error: 'Not found.' }));
