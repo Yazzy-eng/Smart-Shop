@@ -138,4 +138,18 @@ async function recordPayment(req, res) {
   res.status(201).json({ payment: rows[0] });
 }
 
-module.exports = { listCustomers, getCustomer, createCustomer, updateCustomer, getStatement, recordPayment };
+// DELETE /api/customers/payments/:paymentId  (admin/manager only, for correcting mistakes)
+async function deletePayment(req, res) {
+  const { paymentId } = req.params;
+  const { rows } = await db.query(`DELETE FROM payments WHERE id = $1 RETURNING *`, [paymentId]);
+  if (rows.length === 0) return res.status(404).json({ error: 'Payment not found.' });
+
+  await logActivity({
+    userId: req.user.id, action: 'CUSTOMER_PAYMENT_DELETED', entityType: 'payment',
+    entityId: paymentId, details: { amountUsd: rows[0].amount_usd }, ipAddress: req.ip,
+  });
+
+  res.json({ message: 'Payment deleted.' });
+}
+
+module.exports = { listCustomers, getCustomer, createCustomer, updateCustomer, getStatement, recordPayment, deletePayment };

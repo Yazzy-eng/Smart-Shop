@@ -21,6 +21,16 @@ export default function Inventory() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  async function handleDeactivate(productId, productName) {
+    if (!window.confirm(`Remove "${productName}" from active inventory? It will no longer show up in Sales/POS or Inventory, but past sales referencing it stay intact.`)) return;
+    try {
+      await api.delete(`/products/${productId}`);
+      loadProducts();
+    } catch {
+      // If this fails, the list simply won't update; user can retry.
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -117,11 +127,12 @@ export default function Inventory() {
               <th className="px-3 py-2">Barcode</th>
               <th className="px-3 py-2">Price (USD)</th>
               <th className="px-3 py-2">Stock</th>
+              <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody>
             {products.length === 0 && (
-              <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-400">No products yet - add your first one above</td></tr>
+              <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">No products yet - add your first one above</td></tr>
             )}
             {products.map((p) => (
               <tr key={p.id} className="border-t border-slate-100">
@@ -130,6 +141,11 @@ export default function Inventory() {
                 <td className="px-3 py-2">${Number(p.sell_price_usd).toFixed(2)}</td>
                 <td className={`px-3 py-2 ${Number(p.quantity_on_hand) <= Number(p.reorder_level) ? 'text-red-600 font-medium' : ''}`}>
                   {p.quantity_on_hand}
+                </td>
+                <td className="px-3 py-2">
+                  <button onClick={() => handleDeactivate(p.id, p.name)} className="text-xs text-red-500 hover:text-red-700">
+                    Deactivate
+                  </button>
                 </td>
               </tr>
             ))}

@@ -182,7 +182,7 @@ async function createSale(req, res) {
       await client.query(
         `INSERT INTO payments (sale_id, customer_id, method, currency, amount_usd, reference_note, received_by)
          VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [sale.id, customerId || null, p.method, p.currency || 'USD', p.amountUsd, p.referenceNote || null, req.user.id]
+        [sale.id, null, p.method, p.currency || 'USD', p.amountUsd, p.referenceNote || null, req.user.id]
       );
     }
 
