@@ -72,6 +72,17 @@ export default function Customers() {
     }
   }
 
+  async function handleDeletePayment(paymentId) {
+    if (!window.confirm('Delete this payment? Only do this if it was recorded by mistake.')) return;
+    try {
+      await api.delete(`/customers/payments/${paymentId}`);
+      openStatement(selectedCustomer);
+      loadCustomers();
+    } catch (err) {
+      setPaymentError(err.response?.data?.error || 'Could not delete payment.');
+    }
+  }
+
   async function handleRecordPayment(e) {
     e.preventDefault();
     setPaymentError('');
@@ -246,9 +257,16 @@ export default function Customers() {
                   <div className="space-y-1 max-h-32 overflow-y-auto">
                     {statement.payments.length === 0 && <p className="text-sm text-slate-400">No payments recorded yet.</p>}
                     {statement.payments.map((p) => (
-                      <div key={p.id} className="flex justify-between text-sm">
+                      <div key={p.id} className="flex justify-between items-center text-sm">
                         <span className="text-slate-600 capitalize">{p.method.replace('_', ' ')}</span>
-                        <span>${money(p.amount_usd)}</span>
+                        <span className="flex items-center gap-2">
+                          ${money(p.amount_usd)}
+                          <button
+                            onClick={() => handleDeletePayment(p.id)}
+                            title="Delete this payment (use if it was recorded by mistake)"
+                            className="text-red-400 hover:text-red-600 text-xs"
+                          >✕</button>
+                        </span>
                       </div>
                     ))}
                   </div>

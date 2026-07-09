@@ -374,7 +374,7 @@ function Receipt({ receipt, cashierName, onNewSale }) {
         <button onClick={onNewSale} className="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm">New Sale</button>
         <button onClick={() => window.print()} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm">Print Receipt</button>
       </div>
-      <div className="bg-white border border-slate-200 rounded-xl p-6 font-mono text-sm">
+      <div className="print-area bg-white border border-slate-200 rounded-xl p-6 font-mono text-sm">
         <div className="text-center mb-4">
           <div className="font-bold text-base">Deeqsan Store</div>
           <div className="text-slate-500">Hargeisa, Somaliland</div>
