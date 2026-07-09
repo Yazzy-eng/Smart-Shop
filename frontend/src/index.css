@@ -1,20 +1,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Printing: show only the element marked .print-area, hide everything else
-   (sidebar, buttons, rest of the app) so only the receipt prints. */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  .print-area, .print-area * {
-    visibility: visible;
-  }
-  .print-area {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-  }
-}
