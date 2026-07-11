@@ -15,6 +15,7 @@ const categoryRoutes = require('./routes/categories');
 const expenseRoutes = require('./routes/expenses');
 const reportsRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
+const publicSettingsRoutes = require('./routes/settings');
 const supplierRoutes = require('./routes/suppliers');
 const purchaseOrderRoutes = require('./routes/purchaseOrders');
 
@@ -50,6 +51,7 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/settings', publicSettingsRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/purchase-orders', purchaseOrderRoutes);
 

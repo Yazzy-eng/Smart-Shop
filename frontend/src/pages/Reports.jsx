@@ -120,9 +120,9 @@ export default function Reports() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-slate-800">Reports</h1>
+      <h1 className="text-xl font-semibold text-slate-800 print:hidden">Reports</h1>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 print:hidden">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -136,7 +136,7 @@ export default function Reports() {
 
       <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
         {needsDateRange && (
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-end gap-3 print:hidden">
             <div>
               <label className="block text-xs text-slate-500 mb-1">From</label>
               <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
@@ -159,14 +159,21 @@ export default function Reports() {
               </div>
             )}
             <button onClick={loadReport} className="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm font-medium">Apply</button>
-            <button onClick={handleExport} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium ml-auto">Export CSV</button>
-          </div>
-        )}
-        {!needsDateRange && (
-          <div className="flex justify-end">
+            <button onClick={() => window.print()} className="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium ml-auto">Print / Save PDF</button>
             <button onClick={handleExport} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium">Export CSV</button>
           </div>
         )}
+        {!needsDateRange && (
+          <div className="flex justify-end gap-2 print:hidden">
+            <button onClick={() => window.print()} className="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium">Print / Save PDF</button>
+            <button onClick={handleExport} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium">Export CSV</button>
+          </div>
+        )}
+
+        <div className="print-area">
+        <p className="hidden print:block text-sm text-slate-500 mb-3">
+          {TABS.find(t => t.key === activeTab)?.label} report{needsDateRange ? ` — ${from} to ${to}` : ''} — Deeqsan Store
+        </p>
 
         {loading && <p className="text-sm text-slate-400">Loading...</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
@@ -273,6 +280,7 @@ export default function Reports() {
             </table>
           </>
         )}
+        </div>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ export default function AdminSettings() {
   const [rateMessage, setRateMessage] = useState('');
   const [rateError, setRateError] = useState('');
 
-  const [shopInfo, setShopInfo] = useState({ shop_name: '', shop_address: '', shop_phone: '' });
+  const [shopInfo, setShopInfo] = useState({ shop_name: '', shop_address: '', shop_phone: '', receipt_width: '80mm' });
   const [shopSaving, setShopSaving] = useState(false);
   const [shopMessage, setShopMessage] = useState('');
 
@@ -41,6 +41,7 @@ export default function AdminSettings() {
         shop_name: data.settings.shop_name || '',
         shop_address: data.settings.shop_address || '',
         shop_phone: data.settings.shop_phone || '',
+        receipt_width: data.settings.receipt_width || '80mm',
       });
     }).catch(() => {});
   }
@@ -156,6 +157,15 @@ export default function AdminSettings() {
             <label className="block text-sm text-slate-600 mb-1">Phone</label>
             <input value={shopInfo.shop_phone} onChange={(e) => setShopInfo({ ...shopInfo, shop_phone: e.target.value })}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm text-slate-600 mb-1">Receipt printer width</label>
+            <select value={shopInfo.receipt_width} onChange={(e) => setShopInfo({ ...shopInfo, receipt_width: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+              <option value="58mm">58mm thermal printer</option>
+              <option value="80mm">80mm thermal printer</option>
+              <option value="normal">Normal paper (A4 / Letter)</option>
+            </select>
           </div>
           <div className="col-span-2">
             <button type="submit" disabled={shopSaving}

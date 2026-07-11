@@ -34,6 +34,7 @@ export default function POS() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState(null);
+  const [shopSettings, setShopSettings] = useState({ shop_name: 'Deeqsan Store', shop_address: '', receipt_width: '80mm' });
 
   const searchInputRef = useRef(null);
 
@@ -41,6 +42,9 @@ export default function POS() {
     api.get('/exchange-rates/current')
       .then(({ data }) => setExchangeRate(Number(data.rate.rate)))
       .catch(() => setExchangeRate(null));
+    api.get('/settings/public')
+      .then(({ data }) => setShopSettings(data.settings))
+      .catch(() => {});
     searchInputRef.current?.focus();
   }, []);
 
@@ -174,7 +178,7 @@ export default function POS() {
   }
 
   if (receipt) {
-    return <Receipt receipt={receipt} cashierName={user.fullName} onNewSale={() => setReceipt(null)} />;
+    return <Receipt receipt={receipt} cashierName={user.fullName} shopSettings={shopSettings} onNewSale={() => setReceipt(null)} />;
   }
 
   return (
@@ -366,18 +370,21 @@ export default function POS() {
   );
 }
 
-function Receipt({ receipt, cashierName, onNewSale }) {
+function Receipt({ receipt, cashierName, shopSettings, onNewSale }) {
   const { sale, items, exchangeRate, totalSos, customerName } = receipt;
+  const widthClass = shopSettings.receipt_width === '58mm' ? 'receipt-58mm'
+    : shopSettings.receipt_width === '80mm' ? 'receipt-80mm' : '';
   return (
     <div className="max-w-md mx-auto">
       <div className="flex justify-end gap-2 mb-4 print:hidden">
         <button onClick={onNewSale} className="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm">New Sale</button>
         <button onClick={() => window.print()} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm">Print Receipt</button>
       </div>
-      <div className="print-area bg-white border border-slate-200 rounded-xl p-6 font-mono text-sm">
+      <div className={`print-area ${widthClass} bg-white border border-slate-200 rounded-xl p-6 font-mono text-sm`}>
         <div className="text-center mb-4">
-          <div className="font-bold text-base">Deeqsan Store</div>
-          <div className="text-slate-500">Hargeisa, Somaliland</div>
+          <div className="font-bold text-base">{shopSettings.shop_name || 'Deeqsan Store'}</div>
+          {shopSettings.shop_address && <div className="text-slate-500">{shopSettings.shop_address}</div>}
+          {shopSettings.shop_phone && <div className="text-slate-500">{shopSettings.shop_phone}</div>}
         </div>
         <div className="border-t border-dashed border-slate-300 my-2 pt-2">
           <div>Invoice: {sale.invoice_number}</div>

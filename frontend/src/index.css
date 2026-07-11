@@ -17,4 +17,22 @@
     left: 0;
     width: 100%;
   }
+
+  /* Thermal receipt paper widths — narrows the printed area and page size
+     to match common 58mm/80mm receipt printers. Selected in Settings. */
+  .print-area.receipt-58mm {
+    width: 58mm;
+    max-width: 58mm;
+    font-size: 10px;
+    padding: 4px !important;
+  }
+  .print-area.receipt-80mm {
+    width: 80mm;
+    max-width: 80mm;
+    font-size: 11px;
+    padding: 6px !important;
+  }
+  @page {
+    margin: 0;
+  }
 }

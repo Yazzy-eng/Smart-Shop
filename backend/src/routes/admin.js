@@ -42,7 +42,7 @@ router.get('/shop-settings', async (req, res) => {
 // PUT /api/admin/shop-settings
 router.put('/shop-settings', async (req, res) => {
   const updates = req.body; // { shop_name, shop_address, shop_phone }
-  const allowedKeys = ['shop_name', 'shop_address', 'shop_phone'];
+  const allowedKeys = ['shop_name', 'shop_address', 'shop_phone', 'receipt_width'];
 
   for (const [key, value] of Object.entries(updates)) {
     if (!allowedKeys.includes(key)) continue;
