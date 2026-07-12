@@ -24,12 +24,29 @@ export default function AdminSettings() {
 
   const [auditLogs, setAuditLogs] = useState([]);
 
+  const [roles, setRoles] = useState([]);
+  const [roleSaving, setRoleSaving] = useState(null);
+  const [roleMessage, setRoleMessage] = useState('');
+
+  const [backupDownloading, setBackupDownloading] = useState(false);
+  const [backupError, setBackupError] = useState('');
+
+  const PERMISSION_KEYS = [
+    'sales.create', 'sales.void', 'products.manage', 'customers.manage',
+    'reports.view', 'expenses.manage', 'users.manage', 'settings.manage',
+  ];
+
   useEffect(() => {
     loadRate();
     loadShopInfo();
     loadExpenses();
     loadAuditLogs();
+    loadRoles();
   }, []);
+
+  function loadRoles() {
+    api.get('/admin/roles').then(({ data }) => setRoles(data.roles)).catch(() => {});
+  }
 
   function loadRate() {
     api.get('/exchange-rates/current').then(({ data }) => setCurrentRate(data.rate)).catch(() => setCurrentRate(null));
@@ -111,6 +128,40 @@ export default function AdminSettings() {
       setExpenseError(err.response?.data?.error || 'Could not record expense.');
     } finally {
       setExpenseSaving(false);
+    }
+  }
+
+  async function handleTogglePermission(role, key) {
+    const currentValue = role.permissions?.[key] === true;
+    const updatedPermissions = { ...role.permissions, [key]: !currentValue };
+    setRoleSaving(role.id);
+    setRoleMessage('');
+    try {
+      await api.put(`/admin/roles/${role.id}`, { permissions: updatedPermissions });
+      loadRoles();
+    } catch {
+      setRoleMessage('Could not update that permission.');
+    } finally {
+      setRoleSaving(null);
+    }
+  }
+
+  async function handleDownloadBackup() {
+    setBackupError('');
+    setBackupDownloading(true);
+    try {
+      const { data } = await api.get('/admin/backup');
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `deeqsan-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setBackupError('Could not generate backup. Please try again.');
+    } finally {
+      setBackupDownloading(false);
     }
   }
 
@@ -238,6 +289,49 @@ export default function AdminSettings() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+        <h2 className="font-semibold text-slate-800">Role Permissions</h2>
+        <p className="text-sm text-slate-500">
+          Turn permissions on or off for the Manager and Cashier roles. Admin always has full access
+          and can't be restricted here, to prevent accidentally locking yourself out.
+        </p>
+        {roleMessage && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{roleMessage}</div>}
+        <div className="space-y-4">
+          {roles.filter((r) => r.name !== 'admin').map((role) => (
+            <div key={role.id} className="border border-slate-100 rounded-lg p-3">
+              <h3 className="text-sm font-medium text-slate-800 capitalize mb-2">{role.name}</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {PERMISSION_KEYS.map((key) => (
+                  <label key={key} className="flex items-center gap-2 text-sm text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={role.permissions?.[key] === true}
+                      disabled={roleSaving === role.id}
+                      onChange={() => handleTogglePermission(role, key)}
+                    />
+                    {key}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+          {roles.length === 0 && <p className="text-sm text-slate-400">Loading roles...</p>}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-2">
+        <h2 className="font-semibold text-slate-800">Download a Backup</h2>
+        <p className="text-sm text-slate-500">
+          Download a copy of all your shop's data (products, sales, customers, expenses, etc.) as a
+          file you can keep for your own records. This is in addition to Supabase's automatic daily backups.
+        </p>
+        <button onClick={handleDownloadBackup} disabled={backupDownloading}
+          className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium">
+          {backupDownloading ? 'Preparing...' : 'Download Backup (JSON)'}
+        </button>
+        {backupError && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{backupError}</div>}
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-2">

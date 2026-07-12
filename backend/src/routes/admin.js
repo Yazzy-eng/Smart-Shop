@@ -62,4 +62,74 @@ router.put('/shop-settings', async (req, res) => {
   res.json({ message: 'Shop settings updated.' });
 });
 
+// GET /api/admin/backup — downloadable JSON snapshot of all business data
+// (users' password hashes are excluded; Supabase's own automatic backups
+// remain the safety net for full database restore.)
+router.get('/backup', async (req, res) => {
+  try {
+    const tables = [
+      'roles', 'categories', 'suppliers', 'products', 'customers',
+      'sales', 'sale_items', 'payments', 'inventory_transactions',
+      'purchase_orders', 'purchase_order_items', 'expenses',
+      'exchange_rates', 'shop_settings',
+    ];
+
+    const backup = { generatedAt: new Date().toISOString(), tables: {} };
+    for (const table of tables) {
+      const { rows } = await db.query(`SELECT * FROM ${table}`);
+      backup.tables[table] = rows;
+    }
+
+    // Users without password hashes or session tokens
+    const { rows: users } = await db.query(
+      `SELECT id, full_name, username, email, phone, role_id, is_active, last_login_at, created_at FROM users`
+    );
+    backup.tables.users = users;
+
+    await logActivity({
+      userId: req.user.id, action: 'BACKUP_DOWNLOADED', entityType: 'system', ipAddress: req.ip,
+    });
+
+    res.setHeader('Content-Disposition', `attachment; filename="deeqsan-backup-${new Date().toISOString().slice(0, 10)}.json"`);
+    res.json(backup);
+  } catch (err) {
+    console.error('Backup error:', err);
+    res.status(500).json({ error: 'Could not generate backup.' });
+  }
+});
+
+// GET /api/admin/roles — list roles with their permissions
+router.get('/roles', async (req, res) => {
+  const { rows } = await db.query(`SELECT id, name, description, permissions FROM roles ORDER BY id ASC`);
+  res.json({ roles: rows });
+});
+
+// PUT /api/admin/roles/:id — update a role's permissions
+// (the admin role's "all" superuser flag is protected and cannot be removed here,
+// to prevent accidentally locking every admin account out of the system.)
+router.put('/roles/:id', async (req, res) => {
+  const { id } = req.params;
+  const { permissions } = req.body;
+
+  const { rows: existing } = await db.query(`SELECT name, permissions FROM roles WHERE id = $1`, [id]);
+  if (existing.length === 0) return res.status(404).json({ error: 'Role not found.' });
+
+  let newPermissions = permissions;
+  if (existing[0].name === 'admin') {
+    newPermissions = { ...permissions, all: true };
+  }
+
+  const { rows } = await db.query(
+    `UPDATE roles SET permissions = $1 WHERE id = $2 RETURNING id, name, description, permissions`,
+    [JSON.stringify(newPermissions), id]
+  );
+
+  await logActivity({
+    userId: req.user.id, action: 'ROLE_PERMISSIONS_UPDATED', entityType: 'role',
+    entityId: id, details: { roleName: rows[0].name }, ipAddress: req.ip,
+  });
+
+  res.json({ role: rows[0] });
+});
+
 module.exports = router;

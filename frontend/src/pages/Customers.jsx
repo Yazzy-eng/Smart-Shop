@@ -60,6 +60,20 @@ export default function Customers() {
     }
   }
 
+  async function handleRemoveCustomer(customer) {
+    if (!window.confirm(`Remove "${customer.name}"? They'll no longer show up in the customer list or at checkout, but their sales and payment history stay intact for your records.`)) return;
+    try {
+      await api.patch(`/customers/${customer.id}`, { isActive: false });
+      if (selectedCustomer?.id === customer.id) {
+        setSelectedCustomer(null);
+        setStatement(null);
+      }
+      loadCustomers();
+    } catch {
+      // list simply won't update; user can retry
+    }
+  }
+
   async function openStatement(customer) {
     setSelectedCustomer(customer);
     setStatement(null);
@@ -183,20 +197,27 @@ export default function Customers() {
                 <th className="px-3 py-2">Phone</th>
                 <th className="px-3 py-2">Type</th>
                 <th className="px-3 py-2">Outstanding</th>
+                <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody>
               {customers.length === 0 && (
-                <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-400">No customers yet - add your first one above</td></tr>
+                <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">No customers yet - add your first one above</td></tr>
               )}
               {customers.map((c) => (
-                <tr key={c.id} onClick={() => openStatement(c)}
-                  className="border-t border-slate-100 cursor-pointer hover:bg-slate-50">
-                  <td className="px-3 py-2 font-medium">{c.name}</td>
-                  <td className="px-3 py-2 text-slate-500">{c.phone || '-'}</td>
-                  <td className="px-3 py-2 text-slate-500 capitalize">{c.customer_type.replace('_', ' ')}</td>
-                  <td className={`px-3 py-2 ${Number(c.outstanding_balance_usd) > 0 ? 'text-red-600 font-medium' : 'text-slate-500'}`}>
+                <tr key={c.id}
+                  className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="px-3 py-2 font-medium cursor-pointer" onClick={() => openStatement(c)}>{c.name}</td>
+                  <td className="px-3 py-2 text-slate-500 cursor-pointer" onClick={() => openStatement(c)}>{c.phone || '-'}</td>
+                  <td className="px-3 py-2 text-slate-500 capitalize cursor-pointer" onClick={() => openStatement(c)}>{c.customer_type.replace('_', ' ')}</td>
+                  <td className={`px-3 py-2 cursor-pointer ${Number(c.outstanding_balance_usd) > 0 ? 'text-red-600 font-medium' : 'text-slate-500'}`}
+                    onClick={() => openStatement(c)}>
                     ${money(c.outstanding_balance_usd)}
+                  </td>
+                  <td className="px-3 py-2">
+                    <button onClick={() => handleRemoveCustomer(c)} className="text-xs text-red-500 hover:text-red-700">
+                      Remove
+                    </button>
                   </td>
                 </tr>
               ))}
