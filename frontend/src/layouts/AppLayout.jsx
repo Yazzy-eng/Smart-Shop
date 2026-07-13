@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,22 +14,54 @@ const NAV_ITEMS = [
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const visibleItems = NAV_ITEMS.filter((item) => item.roles.includes(user.role));
 
   return (
     <div className="min-h-screen flex bg-slate-50">
-      <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col">
-        <div className="px-6 py-5 border-b border-slate-800">
-          <h1 className="font-bold text-lg">Deeqsan Store</h1>
-          <p className="text-xs text-slate-400">Point of Sale</p>
+      {/* Mobile top bar: shows only on small screens, gives a hamburger button
+          instead of the sidebar eating up the whole screen. */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-slate-900 text-white flex items-center justify-between px-4 py-3">
+        <button onClick={() => setMobileMenuOpen(true)} className="text-xl leading-none px-1" aria-label="Open menu">
+          ☰
+        </button>
+        <span className="font-semibold">Deeqsan Store</span>
+        <span className="w-6" />
+      </div>
+
+      {/* Backdrop when mobile menu is open */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-40"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`
+          w-64 bg-slate-900 text-slate-100 flex flex-col
+          fixed md:static inset-y-0 left-0 z-50
+          transform transition-transform duration-200
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
+        `}
+      >
+        <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between">
+          <div>
+            <h1 className="font-bold text-lg">Deeqsan Store</h1>
+            <p className="text-xs text-slate-400">Point of Sale</p>
+          </div>
+          <button onClick={() => setMobileMenuOpen(false)} className="md:hidden text-slate-400 text-xl leading-none">
+            ✕
+          </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
                 `block rounded-lg px-3 py-2 text-sm font-medium transition ${
                   isActive ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-slate-800'
@@ -52,7 +85,7 @@ export default function AppLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-6 pt-16 md:pt-6 overflow-y-auto overflow-x-hidden w-full">
         <Outlet />
       </main>
     </div>
