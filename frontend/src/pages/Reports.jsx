@@ -37,6 +37,7 @@ const TABS = [
   { key: 'cashierPerformance', label: 'Cashier Performance' },
   { key: 'customerBalances', label: 'Customer Balances' },
   { key: 'inventory', label: 'Inventory' },
+  { key: 'walkins', label: 'Daily Walk-ins' },
 ];
 
 export default function Reports() {
@@ -77,6 +78,9 @@ export default function Reports() {
         case 'inventory':
           res = await api.get('/reports/inventory');
           break;
+        case 'walkins':
+          res = await api.get('/reports/walkins', { params: { from, to } });
+          break;
         default:
           return;
       }
@@ -110,6 +114,10 @@ export default function Reports() {
       case 'inventory':
         downloadCsv('inventory-report.csv', ['Product', 'SKU', 'Barcode', 'Category', 'Stock', 'Reorder Level', 'Cost (USD)', 'Sell Price (USD)', 'Stock Value (USD)'],
           data.products.map(p => [p.name, p.sku, p.barcode, p.categoryName, p.quantityOnHand, p.reorderLevel, money(p.costPriceUsd), money(p.sellPriceUsd), money(p.stockValueUsd)]));
+        break;
+      case 'walkins':
+        downloadCsv('daily-walkins.csv', ['Invoice', 'Customer Name', 'Total (USD)', 'Cashier', 'Date'],
+          data.sales.map(s => [s.invoiceNumber, s.customerName, money(s.totalUsd), s.cashierName, new Date(s.createdAt).toLocaleString()]));
         break;
       default:
         break;
@@ -279,6 +287,26 @@ export default function Reports() {
               </tbody>
             </table>
           </>
+        )}
+
+        {!loading && data && activeTab === 'walkins' && (
+          <table className="w-full text-sm">
+            <thead className="text-left text-slate-500 border-b border-slate-100">
+              <tr><th className="py-2">Invoice</th><th>Customer Name</th><th>Total</th><th>Cashier</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              {data.sales.map((s, i) => (
+                <tr key={i} className="border-b border-slate-50">
+                  <td className="py-2">{s.invoiceNumber}</td>
+                  <td>{s.customerName}</td>
+                  <td>${money(s.totalUsd)}</td>
+                  <td>{s.cashierName}</td>
+                  <td className="text-slate-500">{new Date(s.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+              {data.sales.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-slate-400">No walk-in sales in this range.</td></tr>}
+            </tbody>
+          </table>
         )}
         </div>
       </div>

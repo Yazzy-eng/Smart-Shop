@@ -115,7 +115,7 @@ export default function POS() {
       return;
     }
     try {
-      const { data } = await api.get('/customers', { params: { search: value, type: 'monthly_account' } });
+      const { data } = await api.get('/customers', { params: { search: value } });
       setAccountResults(data.customers);
     } catch {
       setAccountResults([]);

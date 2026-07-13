@@ -146,6 +146,7 @@ async function getProfitLoss(req, res) {
 
 // GET /api/reports/best-sellers?from=&to=&limit=
 async function getBestSellers(req, res) {
+  try {
   const { effectiveFrom, effectiveTo } = dateRangeParams(req.query);
   const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
 
@@ -166,10 +167,15 @@ async function getBestSellers(req, res) {
     to: effectiveTo,
     products: rows.map(r => ({ productId: r.id, name: r.name, unitsSold: Number(r.units_sold), revenueUsd: Number(r.revenue_usd) })),
   });
+  } catch (err) {
+    console.error('Best sellers report error:', err);
+    res.status(500).json({ error: 'Could not load best sellers report.' });
+  }
 }
 
 // GET /api/reports/cashier-performance?from=&to=
 async function getCashierPerformance(req, res) {
+  try {
   const { effectiveFrom, effectiveTo } = dateRangeParams(req.query);
 
   const { rows } = await db.query(
@@ -188,12 +194,17 @@ async function getCashierPerformance(req, res) {
     to: effectiveTo,
     cashiers: rows.map(r => ({ userId: r.id, fullName: r.full_name, saleCount: Number(r.sale_count), totalUsd: Number(r.total_usd) })),
   });
+  } catch (err) {
+    console.error('Cashier performance report error:', err);
+    res.status(500).json({ error: 'Could not load cashier performance report.' });
+  }
 }
 
 // GET /api/reports/customer-balances
 async function getCustomerBalances(req, res) {
+  try {
   const { rows } = await db.query(
-    `SELECT c.id, c.name, c.phone, c.credit_limit_usd,
+    `SELECT c.id, c.name, c.phone, c.customer_type, c.credit_limit_usd,
        COALESCE(charged.total, 0) - COALESCE(paid.total, 0) AS outstanding_balance_usd
      FROM customers c
      LEFT JOIN (
@@ -204,21 +215,26 @@ async function getCustomerBalances(req, res) {
        SELECT customer_id, SUM(amount_usd) AS total FROM payments
        WHERE customer_id IS NOT NULL GROUP BY customer_id
      ) AS paid ON paid.customer_id = c.id
-     WHERE c.customer_type = 'monthly_account'
+     WHERE c.is_active = true
      ORDER BY outstanding_balance_usd DESC NULLS LAST`
   );
 
   res.json({
     customers: rows.map(r => ({
-      customerId: r.id, name: r.name, phone: r.phone,
+      customerId: r.id, name: r.name, phone: r.phone, customerType: r.customer_type,
       creditLimitUsd: Number(r.credit_limit_usd),
       outstandingBalanceUsd: Number(r.outstanding_balance_usd || 0),
     })),
   });
+  } catch (err) {
+    console.error('Customer balances report error:', err);
+    res.status(500).json({ error: 'Could not load customer balances report.' });
+  }
 }
 
 // GET /api/reports/inventory
 async function getInventoryReport(req, res) {
+  try {
   const { rows } = await db.query(
     `SELECT p.id, p.name, p.sku, p.barcode, p.quantity_on_hand, p.reorder_level,
             p.cost_price_usd, p.sell_price_usd,
@@ -242,9 +258,43 @@ async function getInventoryReport(req, res) {
       lowStock: Number(r.quantity_on_hand) <= Number(r.reorder_level),
     })),
   });
+  } catch (err) {
+    console.error('Inventory report error:', err);
+    res.status(500).json({ error: 'Could not load inventory report.' });
+  }
+}
+
+// GET /api/reports/walkins?from=&to=
+async function getWalkinSales(req, res) {
+  try {
+    const { effectiveFrom, effectiveTo } = dateRangeParams(req.query);
+
+    const { rows } = await db.query(
+      `SELECT s.id, s.invoice_number, s.walkin_customer_name, s.total_usd, s.created_at, u.full_name AS cashier_name
+       FROM sales s JOIN users u ON u.id = s.cashier_id
+       WHERE s.customer_id IS NULL AND s.status = 'completed'
+         AND s.created_at >= $1 AND s.created_at < ($2::date + INTERVAL '1 day')
+       ORDER BY s.created_at DESC
+       LIMIT 500`,
+      [effectiveFrom, effectiveTo]
+    );
+
+    res.json({
+      from: effectiveFrom,
+      to: effectiveTo,
+      sales: rows.map(r => ({
+        saleId: r.id, invoiceNumber: r.invoice_number,
+        customerName: r.walkin_customer_name || 'Walk-in (no name given)',
+        totalUsd: Number(r.total_usd), createdAt: r.created_at, cashierName: r.cashier_name,
+      })),
+    });
+  } catch (err) {
+    console.error('Walk-in sales report error:', err);
+    res.status(500).json({ error: 'Could not load walk-in sales report.' });
+  }
 }
 
 module.exports = {
   getDashboard, getSalesReport, getProfitLoss, getBestSellers,
-  getCashierPerformance, getCustomerBalances, getInventoryReport,
+  getCashierPerformance, getCustomerBalances, getInventoryReport, getWalkinSales,
 };

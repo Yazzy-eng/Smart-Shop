@@ -16,5 +16,6 @@ router.get('/best-sellers', reportsController.getBestSellers);
 router.get('/cashier-performance', reportsController.getCashierPerformance);
 router.get('/customer-balances', reportsController.getCustomerBalances);
 router.get('/inventory', reportsController.getInventoryReport);
+router.get('/walkins', reportsController.getWalkinSales);
 
 module.exports = router;

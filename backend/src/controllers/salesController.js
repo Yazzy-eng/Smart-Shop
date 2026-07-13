@@ -102,8 +102,8 @@ async function createSale(req, res) {
         [customerId]
       );
       if (custRows.length === 0) throw Object.assign(new Error('Customer not found.'), { status: 404 });
-      if (custRows[0].customer_type !== 'monthly_account') {
-        throw Object.assign(new Error('Only monthly account customers can purchase on account.'), { status: 400 });
+      if (!['monthly_account', 'walkin'].includes(custRows[0].customer_type)) {
+        throw Object.assign(new Error('This customer type cannot purchase on account.'), { status: 400 });
       }
     }
 
@@ -151,11 +151,11 @@ async function createSale(req, res) {
     const { rows: saleRows } = await client.query(
       `INSERT INTO sales
         (invoice_number, customer_id, cashier_id, sale_currency, exchange_rate_used,
-         subtotal_usd, discount_usd, tax_usd, total_usd, is_on_account, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'completed')
+         subtotal_usd, discount_usd, tax_usd, total_usd, is_on_account, status, walkin_customer_name)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'completed',$11)
        RETURNING *`,
       [invoiceNumber, customerId || null, req.user.id, saleCurrency, exchangeRate,
-       subtotalUsd, discountUsd, taxUsd, totalUsd, isOnAccount]
+       subtotalUsd, discountUsd, taxUsd, totalUsd, isOnAccount, customerId ? null : (walkinCustomerName || null)]
     );
     const sale = saleRows[0];
 
