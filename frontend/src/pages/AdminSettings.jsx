@@ -31,6 +31,11 @@ export default function AdminSettings() {
   const [backupDownloading, setBackupDownloading] = useState(false);
   const [backupError, setBackupError] = useState('');
 
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resetting, setResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
+
   const PERMISSION_KEYS = [
     'sales.create', 'sales.void', 'products.manage', 'customers.manage',
     'reports.view', 'expenses.manage', 'users.manage', 'settings.manage',
@@ -162,6 +167,25 @@ export default function AdminSettings() {
       setBackupError('Could not generate backup. Please try again.');
     } finally {
       setBackupDownloading(false);
+    }
+  }
+
+  async function handleResetRevenue() {
+    setResetError('');
+    setResetMessage('');
+    if (resetConfirmText !== 'RESET REVENUE') {
+      setResetError('Type "RESET REVENUE" exactly (in capitals) to confirm.');
+      return;
+    }
+    setResetting(true);
+    try {
+      const { data } = await api.delete('/admin/reset-revenue', { data: { confirmation: resetConfirmText } });
+      setResetMessage(data.message);
+      setResetConfirmText('');
+    } catch (err) {
+      setResetError(err.response?.data?.error || 'Could not reset revenue.');
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -332,6 +356,35 @@ export default function AdminSettings() {
           {backupDownloading ? 'Preparing...' : 'Download Backup (JSON)'}
         </button>
         {backupError && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{backupError}</div>}
+      </div>
+
+      <div className="bg-white rounded-xl border border-red-200 p-5 space-y-3">
+        <h2 className="font-semibold text-red-700">Reset Revenue History (Danger Zone)</h2>
+        <p className="text-sm text-slate-500">
+          This permanently deletes every sale, sale item, and sale-linked payment — this is what your
+          Dashboard and Reports revenue figures are calculated from. Products, stock quantities, and
+          customer profiles are not affected. <strong>This cannot be undone.</strong> Consider downloading
+          a backup above first.
+        </p>
+        <p className="text-sm text-slate-600">
+          Type <span className="font-mono font-semibold">RESET REVENUE</span> below to confirm:
+        </p>
+        <input
+          type="text"
+          value={resetConfirmText}
+          onChange={(e) => setResetConfirmText(e.target.value)}
+          placeholder="RESET REVENUE"
+          className="w-full max-w-xs rounded-lg border border-red-300 px-3 py-2 text-sm"
+        />
+        {resetError && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{resetError}</div>}
+        {resetMessage && <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{resetMessage}</div>}
+        <button
+          onClick={handleResetRevenue}
+          disabled={resetting || resetConfirmText !== 'RESET REVENUE'}
+          className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium"
+        >
+          {resetting ? 'Resetting...' : 'Permanently Reset Revenue'}
+        </button>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-2">

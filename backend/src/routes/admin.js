@@ -132,4 +132,29 @@ router.put('/roles/:id', async (req, res) => {
   res.json({ role: rows[0] });
 });
 
+// DELETE /api/admin/reset-revenue — permanently deletes all sales history
+// (sale_items and sale-linked payments cascade automatically). Products, stock
+// levels, and customer profiles are untouched. Requires typing a confirmation
+// phrase since this cannot be undone.
+router.delete('/reset-revenue', async (req, res) => {
+  const { confirmation } = req.body;
+  if (confirmation !== 'RESET REVENUE') {
+    return res.status(400).json({ error: 'Confirmation phrase did not match. Nothing was deleted.' });
+  }
+
+  try {
+    const { rows } = await db.query(`DELETE FROM sales RETURNING id`);
+
+    await logActivity({
+      userId: req.user.id, action: 'REVENUE_RESET', entityType: 'system',
+      details: { salesDeleted: rows.length }, ipAddress: req.ip,
+    });
+
+    res.json({ message: `Deleted ${rows.length} sale(s). Revenue history has been reset.` });
+  } catch (err) {
+    console.error('Reset revenue error:', err);
+    res.status(500).json({ error: 'Could not reset revenue history.' });
+  }
+});
+
 module.exports = router;
