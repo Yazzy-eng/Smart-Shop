@@ -50,6 +50,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card label="Today's Sales" value={`$${money(data.todaySalesUsd)}`} tone="success" />
         <Card label="Sales Today (count)" value={data.todaySalesCount} />
+        {isManagement && <Card label="Revenue (this month)" value={`$${money(data.monthlyRevenueUsd)}`} tone="success" />}
+        {isManagement && <Card label="Revenue (this year)" value={`$${money(data.yearlyRevenueUsd)}`} />}
         {isManagement && <Card label="Total Revenue (all time)" value={`$${money(data.totalRevenueUsd)}`} />}
         {isManagement && <Card label="Expenses (this month)" value={`$${money(data.totalExpensesUsdThisMonth)}`} />}
         <Card label="Products Low on Stock" value={data.lowStockCount} tone={data.lowStockCount > 0 ? 'warning' : 'default'} />

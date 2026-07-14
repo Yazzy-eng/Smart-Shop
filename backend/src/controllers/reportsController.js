@@ -25,6 +25,23 @@ async function getDashboard(req, res) {
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
+
+  const { rows: monthlyRevenueRows } = await db.query(
+    `SELECT COALESCE(SUM(s.total_usd), 0) AS total FROM sales s
+     WHERE s.status = 'completed' AND s.created_at >= $1`,
+    [monthStart.toISOString()]
+  );
+
+  const yearStart = new Date();
+  yearStart.setMonth(0, 1);
+  yearStart.setHours(0, 0, 0, 0);
+
+  const { rows: yearlyRevenueRows } = await db.query(
+    `SELECT COALESCE(SUM(s.total_usd), 0) AS total FROM sales s
+     WHERE s.status = 'completed' AND s.created_at >= $1`,
+    [yearStart.toISOString()]
+  );
+
   const { rows: expenseRows } = await db.query(
     `SELECT COALESCE(SUM(e.amount_usd), 0) AS total FROM expenses e WHERE e.expense_date >= $1`,
     [monthStart.toISOString().slice(0, 10)]
@@ -73,6 +90,8 @@ async function getDashboard(req, res) {
     todaySalesUsd: Number(todaySalesRows[0].total),
     todaySalesCount: Number(todaySalesRows[0].count),
     totalRevenueUsd: Number(totalRevenueRows[0].total),
+    monthlyRevenueUsd: Number(monthlyRevenueRows[0].total),
+    yearlyRevenueUsd: Number(yearlyRevenueRows[0].total),
     totalExpensesUsdThisMonth: Number(expenseRows[0].total),
     lowStockCount: Number(lowStockRows[0].count),
     outstandingBalancesUsd: Number(outstandingRows[0].outstanding || 0),
